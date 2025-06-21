@@ -4,9 +4,11 @@ import (
 	"time"
 )
 
+// Expense represents a single expense entry
 type Expense struct {
 	ID          int       // Unique identifier for the expense
 	Amount      int       // Amount of the expense in dollars
+	Category    string    // Category of the expense
 	Date        time.Time // Date of the expense
 	Description string    // Description of the expense
 }
@@ -21,8 +23,8 @@ func NewExpenseService(expenseStorage ExpenseStorage) *ExpenseService {
 	}
 }
 
-// AddExpense adds a new expense with description and amount for today
-func (s *ExpenseService) AddExpense(description string, amount int) (*Expense, error) {
+// AddExpense adds a new expense with category, description and amount for today
+func (s *ExpenseService) AddExpense(category, description string, amount int) (*Expense, error) {
 	id, err := s.expenseStorage.GenerateID()
 	if err != nil {
 		return nil, err
@@ -31,6 +33,7 @@ func (s *ExpenseService) AddExpense(description string, amount int) (*Expense, e
 	expense := Expense{
 		ID:          id,
 		Date:        time.Now(),
+		Category:    category,
 		Description: description,
 		Amount:      amount,
 	}

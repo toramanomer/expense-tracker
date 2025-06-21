@@ -63,7 +63,7 @@ func TestExpenseService_AddExpense(t *testing.T) {
 		s := newMockStorage()
 		s.idErr = errors.New("gen id err")
 		service := ExpenseService{expenseStorage: s}
-		expense, err := service.AddExpense("desc", 10)
+		expense, err := service.AddExpense("category", "desc", 10)
 
 		if err == nil {
 			t.Error("expected error, got none")
@@ -81,7 +81,7 @@ func TestExpenseService_AddExpense(t *testing.T) {
 		s := newMockStorage()
 		s.addErr = errors.New("add err")
 		service := ExpenseService{expenseStorage: s}
-		expense, err := service.AddExpense("desc", 10)
+		expense, err := service.AddExpense("category", "desc", 10)
 
 		if err == nil {
 			t.Error("expected error, got none")
@@ -99,7 +99,7 @@ func TestExpenseService_AddExpense(t *testing.T) {
 		s := newMockStorage()
 		s.id = 3
 		service := ExpenseService{expenseStorage: s}
-		expense, err := service.AddExpense("desc", 10)
+		expense, err := service.AddExpense("category", "desc", 10)
 
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
@@ -107,6 +107,10 @@ func TestExpenseService_AddExpense(t *testing.T) {
 
 		if expense == nil {
 			t.Fatal("expected expense to be not nil")
+		}
+
+		if expense.Category != "category" {
+			t.Errorf("expected expense category to be %s, got: %s", "category", expense.Category)
 		}
 
 		if expense.ID != s.id {
@@ -171,8 +175,8 @@ func TestExpenseService_ListExpenses(t *testing.T) {
 		s := newMockStorage()
 
 		service := ExpenseService{expenseStorage: s}
-		expense1, _ := service.AddExpense("expense 1", 10)
-		expense2, _ := service.AddExpense("expense 2", 20)
+		expense1, _ := service.AddExpense("category", "expense 1", 10)
+		expense2, _ := service.AddExpense("category", "expense 2", 20)
 
 		expenses, err := service.ListExpenses()
 
@@ -202,8 +206,8 @@ func TestExpenseService_ExpenseSummary(t *testing.T) {
 	s := newMockStorage()
 
 	service := ExpenseService{expenseStorage: s}
-	service.AddExpense("expense 1", 10)
-	service.AddExpense("expense 2", 20)
+	service.AddExpense("category", "expense 1", 10)
+	service.AddExpense("category", "expense 2", 20)
 
 	total, err := service.ExpenseSummary()
 
