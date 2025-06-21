@@ -1,13 +1,31 @@
 package expense
 
 import (
+	"encoding/csv"
+	"io"
 	"os"
+	"path/filepath"
 	"strconv"
+	"time"
 )
 
 // StorageFS represents a file system-based storage for expenses.
 type StorageFS struct {
-	idsfile string
+	idsfile      string
+	expensesfile string
+}
+
+// NewStorageFS creates a new StorageFS instance.
+// It initializes the storage directory, panics if it fails due to an error other than file already exists.
+func NewStorageFS(dirname string) *StorageFS {
+	if err := os.MkdirAll(dirname, os.ModePerm); err != nil && !os.IsExist(err) {
+		panic(err)
+	}
+
+	return &StorageFS{
+		idsfile:      filepath.Join(dirname, "ids.txt"),
+		expensesfile: filepath.Join(dirname, "expenses.txt"),
+	}
 }
 
 // GenerateID generates a new unique ID for an expense starting from 1
@@ -36,8 +54,34 @@ func (s *StorageFS) GenerateID() (int, error) {
 	return newID, nil
 }
 
-func (s *StorageFS) Add(expense Expense) error {
+type F interface {
+	io.Writer
+}
+
+func (s *StorageFS) add(expense Expense, w io.Writer) error {
+	writer := csv.NewWriter(w)
+	record := []string{
+		strconv.Itoa(expense.ID),
+		expense.Description,
+		strconv.Itoa(expense.Amount),
+		expense.Date.Format(time.DateOnly),
+	}
+	if err := writer.Write(record); err != nil {
+		return err
+	}
+	writer.Flush()
+
 	return nil
+}
+
+func (s *StorageFS) Add(expense Expense) error {
+	file, err := os.OpenFile(s.expensesfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0655)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return s.add(expense, file)
 }
 
 func (s *StorageFS) Delete(id int) error {
