@@ -54,10 +54,7 @@ func (s *StorageFS) GenerateID() (int, error) {
 	return newID, nil
 }
 
-type F interface {
-	io.Writer
-}
-
+// Helper function to test adding expenses
 func (s *StorageFS) add(expense Expense, w io.Writer) error {
 	writer := csv.NewWriter(w)
 	record := []string{
@@ -88,8 +85,49 @@ func (s *StorageFS) Delete(id int) error {
 	return nil
 }
 
+func (s *StorageFS) list(r io.Reader) ([]Expense, error) {
+	reader := csv.NewReader(r)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	expenses := make([]Expense, len(records))
+	for i, record := range records {
+		id, err := strconv.Atoi(record[0])
+		if err != nil {
+			return nil, err
+		}
+		amount, err := strconv.Atoi(record[2])
+		if err != nil {
+			return nil, err
+		}
+		date, err := time.Parse(time.DateOnly, record[3])
+		if err != nil {
+			return nil, err
+		}
+		expenses[i] = Expense{
+			ID:          id,
+			Description: record[1],
+			Amount:      amount,
+			Date:        date,
+		}
+	}
+
+	return expenses, nil
+}
+
 func (s *StorageFS) List() ([]Expense, error) {
-	return nil, nil
+	file, err := os.Open(s.expensesfile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []Expense{}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	return s.list(file)
 }
 
 var _ ExpenseStorage = (*StorageFS)(nil)

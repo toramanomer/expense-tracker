@@ -54,3 +54,27 @@ func TestStorageFS_Add(t *testing.T) {
 		assert.Equal(t, "1,Test Expense,10,2025-04-20\n2,Test Expense 2,20,2025-04-21\n", w.String())
 	})
 }
+
+func TestStorageFS_List(t *testing.T) {
+	s := NewStorageFS(t.TempDir())
+	exp1 := Expense{
+		ID:          1,
+		Amount:      10,
+		Description: "Test Expense",
+		Date:        time.Date(2025, time.April, 20, 0, 0, 0, 0, time.UTC),
+	}
+	exp2 := Expense{
+		ID:          2,
+		Amount:      20,
+		Description: "Test Expense 2",
+		Date:        time.Date(2025, time.April, 21, 0, 0, 0, 0, time.UTC),
+	}
+
+	w := bytes.NewBufferString("")
+	s.add(exp1, w)
+	s.add(exp2, w)
+
+	expenses, err := s.list(w)
+	require.NoError(t, err)
+	assert.Equal(t, []Expense{exp1, exp2}, expenses)
+}
