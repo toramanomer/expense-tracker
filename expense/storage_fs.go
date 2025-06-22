@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // StorageFS represents a file system-based storage for expenses.
@@ -175,24 +174,11 @@ func (s *StorageFS) list(r io.Reader) ([]Expense, error) {
 
 	expenses := make([]Expense, len(records))
 	for i, record := range records {
-		id, err := strconv.Atoi(record[0])
+		expense, err := decode(record)
 		if err != nil {
 			return nil, err
 		}
-		amount, err := strconv.Atoi(record[2])
-		if err != nil {
-			return nil, err
-		}
-		date, err := time.Parse(time.DateOnly, record[3])
-		if err != nil {
-			return nil, err
-		}
-		expenses[i] = Expense{
-			ID:          id,
-			Description: record[1],
-			Amount:      amount,
-			Date:        date,
-		}
+		expenses[i] = *expense
 	}
 
 	return expenses, nil
