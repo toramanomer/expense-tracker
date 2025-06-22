@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -15,8 +16,32 @@ var summaryCmd = &cobra.Command{
 	Short: "Display total expenses or monthly summary",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		month, _ := cmd.Flags().GetInt("month")
-		fmt.Println("Month:", month)
+		m, _ := cmd.Flags().GetInt("month")
+		month := time.Month(m)
+
+		if month < time.January || month > time.December {
+			fmt.Println("Invalid month. Please enter a valid month (1-12).")
+			return
+		}
+
+		expenses, err := service.ListExpenses()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		var totalExpenses int
+		for _, expense := range expenses {
+			if time.Now().Year() == expense.Date.Year() && month == expense.Date.Month() {
+				totalExpenses += expense.Amount
+			}
+		}
+
+		if month == 0 {
+			fmt.Printf("Total expenses: $%d\n", totalExpenses)
+		} else {
+			fmt.Printf("Monthly summary for %s %d: $%d\n", month.String(), time.Now().Year(), totalExpenses)
+		}
 	},
 }
 
