@@ -2,10 +2,12 @@ package expense
 
 import (
 	"encoding/csv"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -57,17 +59,30 @@ func (s *StorageFS) GenerateID() (int, error) {
 // Helper function to test adding expenses
 func (s *StorageFS) add(expense Expense, w io.Writer) error {
 	writer := csv.NewWriter(w)
-	record := []string{
-		strconv.Itoa(expense.ID),
-		expense.Description,
-		strconv.Itoa(expense.Amount),
-		expense.Date.Format(time.DateOnly),
-	}
-	if err := writer.Write(record); err != nil {
+	if err := writer.Write(encode(expense)); err != nil {
 		return err
 	}
 	writer.Flush()
 
+	return writer.Error()
+}
+
+type MyReader struct {
+	*strings.Reader
+	original string
+}
+
+func NewMyReader(s string) *MyReader {
+	return &MyReader{
+		Reader:   strings.NewReader(s),
+		original: s,
+	}
+}
+func (m *MyReader) Truncate(size int64) error {
+	if size > m.Size() {
+		return errors.New("size is large")
+	}
+	m.Reset(m.original[0:size])
 	return nil
 }
 
@@ -81,8 +96,74 @@ func (s *StorageFS) Add(expense Expense) error {
 	return s.add(expense, file)
 }
 
+var (
+	ErrExpenseNotFound = errors.New("expense not found")
+)
+
+type ReadWriteSeekTruncater interface {
+	io.ReadWriteSeeker
+	Truncate(size int64) error
+}
+
+func (s *StorageFS) delete(id int, rw ReadWriteSeekTruncater) error {
+	reader := csv.NewReader(rw)
+	var (
+		records         [][]string
+		expenseToDelete *Expense
+	)
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		expense, err := decode(record)
+		if err != nil {
+			return err
+		}
+		if expense.ID == id {
+			expenseToDelete = expense
+		} else {
+			records = append(records, record)
+		}
+	}
+
+	if expenseToDelete == nil {
+		return ErrExpenseNotFound
+	}
+
+	if _, err := rw.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	if err := rw.Truncate(0); err != nil {
+		return err
+	}
+
+	// Return early without seeking and writing if there are no records left
+	if len(records) == 0 {
+		return nil
+	}
+
+	return csv.NewWriter(rw).WriteAll(records)
+}
+
+// Delete deletes an expense from the file.
+// If the file does not exist, [ErrExpenseNotFound] is returned.
 func (s *StorageFS) Delete(id int) error {
-	return nil
+	file, err := os.OpenFile(s.expensesfile, os.O_RDWR, 0655)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ErrExpenseNotFound
+		}
+		return err
+	}
+	defer file.Close()
+
+	return s.delete(id, file)
 }
 
 func (s *StorageFS) list(r io.Reader) ([]Expense, error) {
