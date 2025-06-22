@@ -19,7 +19,7 @@ var summaryCmd = &cobra.Command{
 		m, _ := cmd.Flags().GetInt("month")
 		month := time.Month(m)
 
-		if month < time.January || month > time.December {
+		if m != 0 && (month < time.January || month > time.December) {
 			fmt.Println("Invalid month. Please enter a valid month (1-12).")
 			return
 		}
@@ -32,12 +32,12 @@ var summaryCmd = &cobra.Command{
 
 		var totalExpenses int
 		for _, expense := range expenses {
-			if time.Now().Year() == expense.Date.Year() && month == expense.Date.Month() {
+			if m == 0 || (time.Now().Year() == expense.Date.Year() && month == expense.Date.Month()) {
 				totalExpenses += expense.Amount
 			}
 		}
 
-		if month == 0 {
+		if m == 0 {
 			fmt.Printf("Total expenses: $%d\n", totalExpenses)
 		} else {
 			fmt.Printf("Monthly summary for %s %d: $%d\n", month.String(), time.Now().Year(), totalExpenses)
