@@ -1,7 +1,10 @@
 package expense
 
 import (
+	"errors"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Expense represents a single expense entry
@@ -13,63 +16,44 @@ type Expense struct {
 	Description string    // Description of the expense
 }
 
-type ExpenseService struct {
-	expenseStorage ExpenseStorage
+// ValidateID validates the ID of an expense
+func ValidateID(id int) error {
+	if id <= 0 {
+		return errors.New("invalid expense id: must be a positive integer")
+	}
+	return nil
 }
 
-func NewExpenseService(expenseStorage ExpenseStorage) *ExpenseService {
-	return &ExpenseService{
-		expenseStorage: expenseStorage,
+// ValidateAmount validates the amount of an expense
+func ValidateAmount(amount int) error {
+	if amount <= 0 {
+		return errors.New("invalid expense amount: must be a positive integer")
 	}
+	return nil
 }
 
-// AddExpense adds a new expense with category, description and amount for today
-func (s *ExpenseService) AddExpense(category, description string, amount int) (*Expense, error) {
-	id, err := s.expenseStorage.GenerateID()
-	if err != nil {
-		return nil, err
+// ParseCategory parses a category string and returns an error if it's invalid
+func ParseCategory(category string) (string, error) {
+	category = strings.TrimSpace(category)
+
+	if runeCount := utf8.RuneCountInString(category); runeCount == 0 {
+		return "", errors.New("invalid expense category: must not be empty")
+	} else if runeCount > 100 {
+		return "", errors.New("invalid expense category: must not exceed 100 characters")
 	}
 
-	expense := Expense{
-		ID:          id,
-		Date:        time.Now(),
-		Category:    category,
-		Description: description,
-		Amount:      amount,
-	}
-
-	if err := s.expenseStorage.Add(expense); err != nil {
-		return nil, err
-	}
-
-	return &expense, nil
+	return category, nil
 }
 
-// DeleteExpense deletes an expense by its ID
-func (s *ExpenseService) DeleteExpense(id int) error {
-	return s.expenseStorage.Delete(id)
-}
+// ParseDescription parses a description string and returns an error if it's invalid
+func ParseDescription(description string) (string, error) {
+	description = strings.TrimSpace(description)
 
-// ListExpenses lists all expenses
-func (s *ExpenseService) ListExpenses() ([]Expense, error) {
-	expenses, err := s.expenseStorage.List()
-	if err != nil {
-		return []Expense{}, err
-	}
-	return expenses, nil
-}
-
-// ExpenseSummary calculates the total amount of all expenses
-func (s *ExpenseService) ExpenseSummary() (int, error) {
-	expenses, err := s.ListExpenses()
-	if err != nil {
-		return 0, err
+	if runeCount := utf8.RuneCountInString(description); runeCount == 0 {
+		return "", errors.New("invalid expense description: must not be empty")
+	} else if runeCount > 255 {
+		return "", errors.New("invalid expense description: must not exceed 255 characters")
 	}
 
-	var total int
-	for _, expense := range expenses {
-		total += expense.Amount
-	}
-
-	return total, nil
+	return description, nil
 }

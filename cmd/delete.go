@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/toramanomer/expense-tracker/expense"
 )
 
 // deleteCmd represents the delete command
@@ -14,13 +15,26 @@ var deleteCmd = &cobra.Command{
 	Example: "expense-tracker delete --id 2",
 	Run: func(cmd *cobra.Command, args []string) {
 		id, _ := cmd.Flags().GetInt("id")
-		fmt.Printf("Deleting expense with ID: %d\n", id)
+		if err := expense.ValidateID(id); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		err := service.DeleteExpense(id)
+
+		if err != nil {
+			fmt.Printf("Error deleting expense with ID %d: %v\n", id, err)
+			return
+		}
+
+		fmt.Printf("Expense with ID %d deleted successfully\n", id)
+
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
 
-	deleteCmd.Flags().IntP("id", "i", 0, "Expense ID to delete (required)")
+	deleteCmd.Flags().Int("id", 0, "Expense ID to delete (required)")
 	deleteCmd.MarkFlagRequired("id")
 }

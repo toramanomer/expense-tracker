@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
+	"github.com/toramanomer/expense-tracker/expense"
 )
 
 // addCmd represents the add command
@@ -13,17 +16,41 @@ var addCmd = &cobra.Command{
 	Args:    cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		category, _ := cmd.Flags().GetString("category")
-		description, _ := cmd.Flags().GetString("description")
-		amount, _ := cmd.Flags().GetInt("amount")
+		if c, err := expense.ParseCategory(category); err != nil {
+			fmt.Println(err)
+			return
+		} else {
+			category = c
+		}
 
-		service.AddExpense(category, description, amount)
+		description, _ := cmd.Flags().GetString("description")
+		if d, err := expense.ParseDescription(description); err != nil {
+			fmt.Println(err)
+			return
+		} else {
+			description = d
+		}
+
+		amount, _ := cmd.Flags().GetInt("amount")
+		if err := expense.ValidateAmount(amount); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		expense, err := service.AddExpense(category, description, amount)
+		if err != nil {
+			fmt.Println("Error adding expense:", err)
+			return
+		}
+
+		fmt.Printf("Expense added successfully (ID: %d)\n", expense.ID)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
 
-	addCmd.Flags().StringP("category", "c", "", "Expense category")
+	addCmd.Flags().StringP("category", "c", "", "Expense category (required)")
 	addCmd.Flags().StringP("description", "d", "", "Expense description (required)")
 	addCmd.Flags().IntP("amount", "a", 0, "Expense amount (required)")
 
