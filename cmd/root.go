@@ -4,7 +4,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/toramanomer/expense-tracker/expense"
 )
+
+var storage = expense.NewStorageFS("data")
+var service = expense.NewExpenseService(storage)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
