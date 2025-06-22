@@ -10,7 +10,10 @@ clean:
 test:
 	@go test ./...
 
+.PHONY download
+download:
+	@go mod download
 
 .PHONY: build
-build:
+build: download
 	@go build -o expense-tracker main.go
