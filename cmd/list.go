@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -77,23 +74,23 @@ func printExpensesTable(expenses []expense.Expense) {
 	}
 }
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all expenses",
-	Long:  "Display all expenses in a formatted table",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		expenses, err := service.ListExpenses()
-		if err != nil {
-			fmt.Println("Error listing expenses:", err)
-			return
-		}
+// listCommand creates the list command
+func (c *commands) listCommand() *cobra.Command {
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List all expenses",
+		Long:  "Display all expenses in a formatted table",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			expenses, err := c.service.ListExpenses()
+			if err != nil {
+				fmt.Println("Error listing expenses:", err)
+				return
+			}
 
-		printExpensesTable(expenses)
-	},
-}
+			printExpensesTable(expenses)
+		},
+	}
 
-func init() {
-	rootCmd.AddCommand(listCmd)
+	return listCmd
 }

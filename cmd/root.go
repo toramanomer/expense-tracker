@@ -1,27 +1,35 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/toramanomer/expense-tracker/expense"
 )
 
-var storage = expense.NewStorageFS("data")
-var service = expense.NewExpenseService(storage)
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "expense-tracker",
-	Short: "A simple expense tracker CLI application to manage your finances.",
-	Long:  "A command-line application to track your expenses, manage budgets, and generate reports.",
+// commands holds the dependencies for all commands
+type commands struct {
+	service *expense.ExpenseService
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
+// NewCommands creates a new Commands instance with the provided service
+func NewCommands(service *expense.ExpenseService) *commands {
+	return &commands{
+		service: service,
 	}
+}
+
+// RootCommand creates and returns the root command with all subcommands
+func (c *commands) RootCommand() *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use:   "expense-tracker",
+		Short: "A simple expense tracker CLI application to manage your finances.",
+		Long:  "A command-line application to track your expenses, manage budgets, and generate reports.",
+	}
+
+	// Add all subcommands
+	rootCmd.AddCommand(c.addCommand())
+	rootCmd.AddCommand(c.deleteCommand())
+	rootCmd.AddCommand(c.listCommand())
+	rootCmd.AddCommand(c.summaryCommand())
+
+	return rootCmd
 }
