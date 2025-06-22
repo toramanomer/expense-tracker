@@ -1,6 +1,6 @@
 # Expense Tracker
 
-A command-line application to track your expenses, manage budgets, and generate reports.
+A [command-line application](https://roadmap.sh/projects/expense-tracker) to track your expenses, manage budgets, and generate reports.
 
 ## Available Commands
 

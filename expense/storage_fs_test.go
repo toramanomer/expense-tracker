@@ -41,20 +41,22 @@ func TestStorageFS_Add(t *testing.T) {
 		err := s.add(Expense{
 			ID:          1,
 			Amount:      10,
+			Category:    "Food",
 			Description: "Test Expense",
 			Date:        time.Date(2025, time.April, 20, 0, 0, 0, 0, time.Local),
 		}, w)
 		require.NoError(t, err)
-		assert.Equal(t, "1,Test Expense,10,2025-04-20\n", w.String())
+		assert.Equal(t, "1,10,Food,Test Expense,2025-04-20\n", w.String())
 
 		err = s.add(Expense{
 			ID:          2,
 			Amount:      20,
+			Category:    "Food",
 			Description: "Test Expense 2",
 			Date:        time.Date(2025, time.April, 21, 0, 0, 0, 0, time.Local),
 		}, w)
 		require.NoError(t, err)
-		assert.Equal(t, "1,Test Expense,10,2025-04-20\n2,Test Expense 2,20,2025-04-21\n", w.String())
+		assert.Equal(t, "1,10,Food,Test Expense,2025-04-20\n2,20,Food,Test Expense 2,2025-04-21\n", w.String())
 	})
 }
 
